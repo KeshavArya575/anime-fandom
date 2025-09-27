@@ -74,6 +74,7 @@ function AttributeTag({ label }: { label: string | null }) {
 }
 
 export default async function CharacterPage({ params }: { params: { id: string } }) {
+
   const character = await getCharacterData(parseInt(params.id));
 
   if (!character) {
