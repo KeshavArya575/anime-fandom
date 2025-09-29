@@ -1,31 +1,79 @@
 // app/profile/page.tsx
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import SeriesCard from '@/components/SeriesCard';
 
+// This is a new GraphQL query that can fetch MULTIPLE series by their IDs
+const query = `
+  query ($ids: [Int]) {
+    Page(page: 1, perPage: 50) {
+      media(id_in: $ids, type: ANIME) {
+        id
+        title {
+          romaji
+        }
+        description(asHtml: false)
+        coverImage {
+          large
+          color
+        }
+      }
+    }
+  }
+`;
+
+// This new function takes an array of IDs and fetches their data from AniList
+async function getLibrarySeriesData(ids: number[]) {
+  if (ids.length === 0) return [];
+  
+  const response = await fetch('https://graphql.anilist.co', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({
+      query: query,
+      variables: { ids: ids },
+    }),
+    next: { revalidate: 3600 } // Revalidate once per hour
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch series data from AniList');
+  }
+
+  const json = await response.json();
+  return json.data.Page.media;
+}
+
 export default async function ProfilePage() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { get(name: string) { return cookieStore.get(name)?.value; } } }
+  );
 
-  // 1. Get the user's session
   const { data: { session } } = await supabase.auth.getSession();
-
-  // 2. If no user is logged in, redirect to the login page
   if (!session) {
     redirect('/login');
   }
 
-  // 3. Fetch the user's profile and followed series from the database
-  const [profileResponse, libraryResponse] = await Promise.all([
-    supabase.from('profiles').select('username').eq('id', session.user.id).single(),
-    supabase.from('user_library').select('series(*)').eq('user_id', session.user.id)
-  ]);
+  // 1. Get the LIST of followed series IDs from your Supabase library
+  const { data: libraryItems } = await supabase
+    .from('user_library')
+    .select('series_id')
+    .eq('user_id', session.user.id);
   
-  const { data: profile } = profileResponse;
-  const { data: libraryItems } = libraryResponse;
-  
-  // Extract just the series data from the library items
-  const followedSeries = libraryItems?.map(item => item.series) || [];
+  const followedSeriesIds = libraryItems?.map(item => item.series_id) || [];
+
+  // 2. Fetch the full series DETAILS for those IDs from AniList
+  const followedSeries = await getLibrarySeriesData(followedSeriesIds);
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', session.user.id)
+    .single();
 
   return (
     <div className="space-y-12">
@@ -42,14 +90,9 @@ export default async function ProfilePage() {
         <h2 className="text-2xl font-bold text-gray-900">Your Followed Series</h2>
         {followedSeries.length > 0 ? (
           <div className="mt-6 space-y-4">
+            {/* 3. Display the data fetched from AniList */}
             {followedSeries.map((series: any) => (
-              <SeriesCard
-                key={series.id}
-                title={series.name}
-                description={series.description}
-                imageUrl={series.image_url || '/fsn-series.jpg'}
-                href={`/series/${series.anilist_id}`}
-              />
+              series && <SeriesCard key={series.id} series={series} />
             ))}
           </div>
         ) : (

@@ -5,20 +5,18 @@ import { useState } from 'react';
 import SeriesCard from './SeriesCard';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-// Define a type for the series data
+// This type should match what your database/API provides
 type Series = {
   id: number;
   name: string;
-  description: string;
-  image_url: string;
-  anilist_id?: number; // Keep this for the AniList integration
+  description: string | null;
+  image_url: string | null;
+  anilist_id: number | null;
 };
 
-// This component receives the initial list of all series as a prop
 export default function SeriesList({ allSeries }: { allSeries: Series[] }) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter the series based on the search term
   const filteredSeries = allSeries.filter((series) =>
     series.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -42,14 +40,8 @@ export default function SeriesList({ allSeries }: { allSeries: Series[] }) {
       {/* Grid of Series Cards */}
       <div className="space-y-4">
         {filteredSeries.map((series) => (
-          <SeriesCard
-            key={series.id}
-            title={series.name}
-            description={series.description}
-            imageUrl={series.image_url || '/fsn-series.jpg'}
-            // The href should use the anilist_id if it exists, otherwise the regular id
-            href={`/series/${series.anilist_id || series.id}`}
-          />
+          // ✅ FIX: Pass the entire 'series' object as a single prop
+          <SeriesCard key={series.id} series={series} />
         ))}
       </div>
     </div>

@@ -1,18 +1,8 @@
 // components/FeaturedCard.tsx
 import Link from 'next/link';
 
-type Stat = {
-  label: string;
-  value: string;
-};
-
-type FeaturedCardProps = {
-  category: string;
-  title: string;
-  description: string;
-  stats: Stat[];
-  href: string;
-};
+type Stat = { label: string; value: string; };
+type FeaturedCardProps = { category: string; title: string; description: string; stats: Stat[]; href: string; };
 
 export default function FeaturedCard({ category, title, description, stats, href }: FeaturedCardProps) {
   return (

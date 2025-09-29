@@ -37,6 +37,7 @@ export default function Sidebar() {
             <ul role="list" className="-mx-2 mt-2 space-y-1">
               <li><NavLink href="/characters" icon={UserGroupIcon} label="Characters" active={true} /></li>
               <li><NavLink href="/series" icon={FilmIcon} label="Series" count={5} /></li>
+              <li><NavLink href="/popularity" icon={ChartBarIcon} label="Popularity Index" /></li>
             </ul>
           </li>
         </ul>
