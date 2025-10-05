@@ -1,46 +1,67 @@
 // components/Sidebar.tsx
-import { UserGroupIcon, FilmIcon, ChartBarIcon, BookOpenIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+'use client';
 
-function NavLink({ href, icon: Icon, label, count, active = false }: any) {
-  const activeClasses = 'bg-gray-100 text-gray-900';
-  const inactiveClasses = 'text-gray-600 hover:bg-gray-100 hover:text-gray-900';
-  
-  return (
-    <Link 
-      href={href}
-      className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium ${active ? activeClasses : inactiveClasses}`}
-    >
-      <div className="flex items-center">
-        <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-        <span>{label}</span>
-      </div>
-      
-      {count && (
-        <span className="ml-auto text-xs font-medium text-gray-500">
-          {count}
-        </span>
-      )}
-    </Link>
-  );
-}
+import Link from 'next/link';
+import { useState } from 'react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import {
+  UsersIcon,
+  FilmIcon,
+  BarChart3Icon,
+  BookOpenIcon,
+  ChevronsUpDownIcon,
+} from 'lucide-react';
 
 export default function Sidebar() {
+  const [isBrowseOpen, setIsBrowseOpen] = useState(true);
+
   return (
-    <aside className="flex w-64 flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-     
+    // Main sidebar container with dark theme classes
+    <aside className="flex w-64 flex-col gap-y-5 overflow-y-auto border-r bg-background px-6">
+      <div className="flex h-16 shrink-0 items-center text-xl font-bold">
+        AF AnimeFandom
+      </div>
       
       <nav className="flex flex-1 flex-col">
-        <ul role="list" className="flex flex-1 flex-col gap-y-7">
-          <li>
-            
-            <ul role="list" className="-mx-2 mt-2 space-y-1">
-              <li><NavLink href="/characters" icon={UserGroupIcon} label="Characters" active={true} /></li>
-              <li><NavLink href="/series" icon={FilmIcon} label="Series" count={5} /></li>
-              <li><NavLink href="/popularity" icon={ChartBarIcon} label="Popularity Index" /></li>
-            </ul>
-          </li>
-        </ul>
+        <div className="flex flex-1 flex-col gap-y-7">
+          
+          {/* --- Collapsible Browse Section --- */}
+          <Collapsible open={isBrowseOpen} onOpenChange={setIsBrowseOpen}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground">Browse</h3>
+              <CollapsibleTrigger asChild>
+                
+                
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent className="space-y-1 mt-2">
+              <Button variant="ghost" className="w-full justify-start gap-x-3" asChild>
+                <Link href="/characters"><UsersIcon className="h-4 w-4" /> Characters</Link>
+              </Button>
+              <Button variant="ghost" className="w-full justify-start gap-x-3" asChild>
+                <Link href="/series"><FilmIcon className="h-4 w-4" /> Series</Link>
+              </Button>
+              <Button variant="ghost" className="w-full justify-start gap-x-3" asChild>
+                <Link href="/popularity"><BarChart3Icon className="h-4 w-4" /> Popularity</Link>
+              </Button>
+              <Button variant="ghost" className="w-full justify-start gap-x-3" asChild>
+                <Link href="#"><BookOpenIcon className="h-4 w-4" /> Wiki</Link>
+              </Button>
+            </CollapsibleContent>
+          </Collapsible>
+
+       
+          
+         
+
+        </div>
       </nav>
     </aside>
   );

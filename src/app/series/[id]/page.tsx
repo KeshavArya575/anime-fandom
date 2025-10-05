@@ -1,9 +1,10 @@
 // app/series/[id]/page.tsx
 import Image from 'next/image';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import FollowButton from '@/components/FollowButton';
-import CharacterCard from '@/components/CharacterCard'; // Make sure CharacterCard is imported
+import CharacterCard from '@/components/CharacterCard';
+import { notFound } from 'next/navigation';
 
 const query = `
   query ($id: Int) {
@@ -39,31 +40,36 @@ async function getSeriesData(id: number) {
   }
 
   const json = await response.json();
+  // ✅ This line is crucial. It returns the fetched data from the function.
   return json.data.Media;
 }
 
 export async function generateStaticParams() {
-  const seriesIds = [16498, 1535, 356, 10087, 154587];
+  const seriesIds = [405, 10632, 16397, 20791];
   return seriesIds.map((id) => ({
     id: id.toString(),
   }));
 }
 
 export default async function SeriesPage({ params }: { params: { id: string } }) {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { get(name: string) { return cookieStore.get(name)?.value; } } }
+  );
   
+  const { data: { session } } = await supabase.auth.getSession();
   const series = await getSeriesData(parseInt(params.id));
   
   if (!series) {
-    return <p>Series not found.</p>
+    notFound();
   }
 
   const description = series.description.replace(/<br\s*\/?>/g, '');
 
   return (
     <div className="space-y-8">
-      {/* Series Header */}
       <section className="relative -m-8 mb-8 h-64 w-auto">
         <Image 
           src={series.bannerImage}
@@ -81,7 +87,6 @@ export default async function SeriesPage({ params }: { params: { id: string } })
         </div>
       </section>
 
-      {/* ✅ --- CHARACTER GRID (RE-ENABLED) --- ✅ */}
       <section>
         <h2 className="text-2xl font-bold text-gray-900">Characters</h2>
         <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -96,7 +101,6 @@ export default async function SeriesPage({ params }: { params: { id: string } })
           ))}
         </div>
       </section>
-      {/* --- END OF CHARACTER GRID --- */}
     </div>
   );
 }

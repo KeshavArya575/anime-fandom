@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import SeriesCard from '@/components/SeriesCard';
 
-// This is a new GraphQL query that can fetch MULTIPLE series by their IDs
+// GraphQL query to fetch multiple series by their IDs
 const query = `
   query ($ids: [Int]) {
     Page(page: 1, perPage: 50) {
@@ -23,7 +23,7 @@ const query = `
   }
 `;
 
-// This new function takes an array of IDs and fetches their data from AniList
+// This function takes an array of IDs and fetches their data from AniList
 async function getLibrarySeriesData(ids: number[]) {
   if (ids.length === 0) return [];
   
@@ -58,22 +58,18 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  // 1. Get the LIST of followed series IDs from your Supabase library
+  // 1. Get the LIST of followed anilist_ids from your Supabase library
   const { data: libraryItems } = await supabase
     .from('user_library')
-    .select('series_id')
+    .select('series_id') // This is the anilist_id
     .eq('user_id', session.user.id);
   
   const followedSeriesIds = libraryItems?.map(item => item.series_id) || [];
 
   // 2. Fetch the full series DETAILS for those IDs from AniList
-  const followedSeries = await getLibrarySeriesData(followedSeriesIds);
+  const followedSeriesFromAniList = await getLibrarySeriesData(followedSeriesIds);
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', session.user.id)
-    .single();
+  const { data: profile } = await supabase.from('profiles').select('username').eq('id', session.user.id).single();
 
   return (
     <div className="space-y-12">
@@ -88,10 +84,10 @@ export default async function ProfilePage() {
 
       <section>
         <h2 className="text-2xl font-bold text-gray-900">Your Followed Series</h2>
-        {followedSeries.length > 0 ? (
+        {followedSeriesFromAniList.length > 0 ? (
           <div className="mt-6 space-y-4">
             {/* 3. Display the data fetched from AniList */}
-            {followedSeries.map((series: any) => (
+            {followedSeriesFromAniList.map((series: any) => (
               series && <SeriesCard key={series.id} series={series} />
             ))}
           </div>
